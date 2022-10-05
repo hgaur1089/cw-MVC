@@ -1,8 +1,9 @@
+using System;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using backend.Models;
 using backend.DataLibrary;
-using backend.Params;
+using backend.Models;
 using Dapper;
 
 namespace backend.Controllers;
@@ -21,36 +22,92 @@ public class ApiController : Controller
     [HttpGet]
     [Route("/products")]
     [Route("/")]
-    public async Task<List<ProductModel>> GetProducts([FromQuery]QueryParams query)
+    public async Task<List<ProductModel>> GetProducts(int? limit=0)
     {
-        string sql = "SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id LIMIT @limit,10";
-        
-        var querparam = new {limit = query.limit};
+        string sql = $"SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id LIMIT {limit},10";
 
-        var products = await _data.LoadData<ProductModel, dynamic>(sql, querparam, _config.GetConnectionString("Default"));
+        var products = await _data.LoadData<ProductModel, dynamic>(sql, new {}, _config.GetConnectionString("Default"));
         return products;
     }
 
     [HttpGet]
     [Route("/products/search")]
-    public async Task<List<ProductModel>> GetFilteredProducts([FromQuery]QueryParams query)
+    public async Task<List<ProductModel>> GetFilteredProducts([FromQuery] QueryParams query)
     {
-        string sql = "SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id";// WHERE  categories.name IN @categories AND brands.name IN @brands AND price between @min_price AND @max_price LIMIT @limit,10";
+        var categoriesList = await _data.LoadData<CategoryModel, dynamic>("SELECT id FROM categories", new { }, _config.GetConnectionString("Default"));
+        var brandsList = await _data.LoadData<BrandModel, dynamic>("SELECT id FROM brands", new { }, _config.GetConnectionString("Default"));
+        string sql = "SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id";
 
-        if(query.categories != null){
-            sql += " WHERE categories.name IN @categories";
+        if (query.categories != null && query.categories.Length > 0)
+        {
+            sql += " WHERE categories.id IN (";
+            for (int i = 0; i < query.categories.Length; i++)
+            {
+                if (categoriesList.Any(x => x.id == query.categories[i]))
+                {
+                    sql += query.categories[i];
+                    if (i != query.categories.Length - 1)
+                    {
+                        sql += ",";
+                    }
+                }
+            }
+            sql += ")";
+        } else {
+            sql += " WHERE categories.id IN (";
+            for (int i = 0; i < categoriesList.Count; i++)
+            {
+                sql += categoriesList[i].id;
+                if (i != categoriesList.Count - 1)
+                {
+                    sql += ",";
+                }
+            }
+            sql += ")";
         }
-        if(query.brands != null){
-            sql += " AND brands.name IN @brands";
-        }
-        if(query.min_price != 0 && query.max_price != 0){
-            sql += " AND price between @min_price AND @max_price";
-        }
-        sql += " LIMIT @limit,10";
 
-        var querparam = new {categories = query.categories, brands = query.brands, min_price = query.min_price, max_price = query.max_price, limit = query.limit};
+        if(query.brands != null && query.brands.Length > 0)
+        {
+            sql += " AND brands.id IN (";
+            for (int i = 0; i < query.brands.Length; i++)
+            {
+                if (brandsList.Any(x => x.id == query.brands[i]))
+                {
+                    sql += query.brands[i];
+                    if (i != query.brands.Length - 1)
+                    {
+                        sql += ",";
+                    }
+                }
+            }
+            sql += ")";
+        } else {
+            sql += " AND brands.id IN (";
+            for (int i = 0; i < brandsList.Count; i++)
+            {
+                sql += brandsList[i].id;
+                if (i != brandsList.Count - 1)
+                {
+                    sql += ",";
+                }
+            }
+            sql += ")";
+        }
 
-        var products = await _data.LoadData<ProductModel, dynamic>(sql, querparam, _config.GetConnectionString("Default"));
+        var min_price = 0; 
+        if(query.min_price > 0)
+        {
+            min_price = query.min_price;
+        }
+
+        var max_price = 1000000;
+        if(query.max_price > 0)
+        {
+            max_price = query.max_price;
+        }
+        sql += $" AND price between {min_price} AND {max_price}";
+
+        var products = await _data.LoadData<ProductModel, dynamic>(sql, new {}, _config.GetConnectionString("Default"));
         return products;
     }
 
