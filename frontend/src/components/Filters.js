@@ -6,7 +6,8 @@ import {
   setFilterCategory,
   setFilterBrand,
   setFilterRange,
-  fetchFilteredProducts
+  fetchFilteredProducts,
+  clearFilters,
 } from "../actions";
 import ListButtons from "./ListButtons";
 
@@ -59,11 +60,9 @@ class Filters extends React.Component {
   };
 
   render() {
-    const { brands, categories, filterCategories, filterBrands, filterRange } =
+    const { brands, categories, filteredProducts } =
       this.props.store.getState().products;
-    console.log(filterCategories);
-    console.log(filterBrands);
-    console.log(filterRange);
+
     return (
       <div style={styles.container}>
         <div style={styles.heading}>
@@ -113,6 +112,16 @@ class Filters extends React.Component {
               </div>
             </div>
           )}
+          {filteredProducts.length > 0 && (
+            <button
+              style={styles.clearButton}
+              onClick={() => {
+                this.props.store.dispatch(clearFilters());
+              }}
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
     );
@@ -149,6 +158,18 @@ const styles = {
     width: "60%",
     height: "100%",
     display: "flex",
+  },
+  clearButton: {
+    width: "60%",
+    height: "40px",
+    backgroundColor: "#5181fd",
+    border: "4px solid #5181fd",
+    borderRadius: "6px",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "16px",
+    marginTop: "10px",
+    cursor: "pointer",
   },
 };
 

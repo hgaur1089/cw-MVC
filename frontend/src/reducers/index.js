@@ -8,6 +8,8 @@ import {
   SET_FILTER_BRAND,
   SET_FILTER_RANGE,
   SET_FILTERED_PRODUCTS,
+  CLEAR_FILTERS,
+  SET_PAGE_NO,
 } from "../actions";
 
 const initialProductsState = {
@@ -19,19 +21,20 @@ const initialProductsState = {
   filterRange: [],
   filteredProducts: [],
   loading: false,
+  pageno: 0,
 };
 export function products(state = initialProductsState, action) {
   switch (action.type) {
     case SET_LOADING:
       return {
         ...state,
-        loading: true,
+        loading: !state.loading,
       };
     case ADD_PRODUCTS:
       return {
         ...state,
         loading: false,
-        list: [...state.list, ...action.products],
+        list: action.products,
       };
     case ADD_BRANDS:
       return {
@@ -76,6 +79,19 @@ export function products(state = initialProductsState, action) {
       return {
         ...state,
         filteredProducts: action.products,
+      };
+    case CLEAR_FILTERS:
+      return {
+        ...state,
+        filterCategories: [],
+        filterBrands: [],
+        filterRange: [],
+        filteredProducts: [],
+      };
+    case SET_PAGE_NO:
+      return {
+        ...state,
+        pageno: action.pageno,
       };
     default:
       return state;

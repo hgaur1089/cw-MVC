@@ -2,7 +2,7 @@ import React from "react";
 
 import "./productListItem.css";
 import ProductListItem from "./ProductListItem";
-import { fetchProducts } from "../actions";
+import { fetchProducts, fetchFilteredProducts } from "../actions";
 
 class ProductList extends React.Component {
   constructor() {
@@ -18,9 +18,11 @@ class ProductList extends React.Component {
 
   render() {
     const { products } = this.props.store.getState();
-    const { loading } = products;
+    const { dispatch } = this.props.store;
+    const { loading, pageno, filteredProducts, list } = products;
+    console.log("products = ", pageno, list);
 
-    const list = products.filteredProducts.length !== 0 ? products.filteredProducts : products.list;
+    const data = filteredProducts.length !== 0 ? filteredProducts : list;
 
     return ( 
       <div style={styles.container}>
@@ -28,7 +30,7 @@ class ProductList extends React.Component {
           <h1>Product List</h1>
         </div>
         <div style={styles.productList}>
-          {list.map((product, index) => (
+          {data.map((product, index) => (
             <ProductListItem
               name={product.title}
               description={product.description}
@@ -43,7 +45,38 @@ class ProductList extends React.Component {
             />
           ))}
         </div>
+
         {loading && <div><h1>Loading...</h1></div>}
+        
+        <div style={styles.pagination}>
+          <button
+            style={styles.button}
+            onClick={() => {
+              if(pageno > 0) {
+                if(filteredProducts.length !== 0) {
+                  dispatch(fetchFilteredProducts(pageno - 1));
+                } else {
+                  dispatch(fetchProducts(pageno - 1));
+                }
+              }
+            }}
+          >
+            Previous
+          </button>
+          <button
+            style={styles.button}
+            onClick={() => {
+              if(filteredProducts.length !== 0) {
+                console.log("pageno = ", pageno);
+                dispatch(fetchFilteredProducts(pageno + 1));
+              } else {
+                dispatch(fetchProducts(pageno + 1));
+              }
+            }}
+          >
+            Next
+          </button>
+        </div>
       </div>
     );
   }
@@ -70,6 +103,24 @@ const styles = {
   loadingCSS: {
     height: "100px",
     margin: "30px",
+  },
+  pagination: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    alignContent: "center",
+    width: "100%",
+    maxWidth: "1000px",
+  },
+  button: {
+    padding: "10px 20px",
+    margin: "10px",
+    borderRadius: "5px",
+    border: "none",
+    backgroundColor: "#f0c14b",
+    color: "#111",
+    cursor: "pointer",
   },
 };
 

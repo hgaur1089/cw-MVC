@@ -9,6 +9,8 @@ export const SET_FILTER_CATEGORY = "SET_FILTER_CATEGORY";
 export const SET_FILTER_BRAND = "SET_FILTER_BRAND";
 export const SET_FILTER_RANGE = "SET_FILTER_RANGE";
 export const SET_FILTERED_PRODUCTS = "SET_FILTERED_PRODUCTS";
+export const CLEAR_FILTERS = "CLEAR_FILTERS";
+export const SET_PAGE_NO = "SET_PAGE_NO";
 
 export function addProducts(products) {
   return {
@@ -23,15 +25,24 @@ export const setLoading = () => {
   };
 };
 
-export function fetchProducts() {
-  const url = "https://localhost:7028/";
+export const setPageNo = (pageno) => {
+  return {
+    type: SET_PAGE_NO,
+    pageno,
+  };
+}
+
+export function fetchProducts(pageno) {
+  pageno = pageno ? pageno : 0;
+  const url = `https://localhost:7028/?page=${pageno}`;
   return function (dispatch) {
     dispatch(setLoading());
     return axios
       .get(url)
       .then((response) => {
-        dispatch(setLoading(false));
+        dispatch(setLoading());
         dispatch(addProducts(response.data));
+        dispatch(setPageNo(pageno===undefined?1:pageno));
       })
       .catch((error) => {
         throw error;
@@ -39,17 +50,19 @@ export function fetchProducts() {
   };
 }
 
-export function fetchFilteredProducts() {
+export function fetchFilteredProducts(pageno) {
   const url = "https://localhost:7028/products/search";
   const categories = store.getState().products.filterCategories;
   const brands = store.getState().products.filterBrands;
   const minPrice = store.getState().products.filterRange.minPrice;
   const maxPrice = store.getState().products.filterRange.maxPrice;
+  const limit = pageno ? pageno : 0;
   const params = {
     categories,
     brands,
     minPrice,
     maxPrice,
+    limit,
   };
   console.log("params = ", params);
   return function (dispatch) {
@@ -61,7 +74,7 @@ export function fetchFilteredProducts() {
       .then((response) => {
         dispatch(setLoading(false));
         dispatch(addFilteredProducts(response.data));
-        // console.log("response.data = ", response.data);
+        dispatch(setPageNo(limit==0?0:pageno));
       })
       .catch((error) => {
         throw error;
@@ -119,6 +132,12 @@ export function fetchCategories() {
       .catch((error) => {
         throw error;
       });
+  };
+}
+
+export function clearFilters() {
+  return {
+    type: CLEAR_FILTERS,
   };
 }
 

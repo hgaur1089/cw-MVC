@@ -22,9 +22,10 @@ public class ApiController : Controller
     [HttpGet]
     [Route("/products")]
     [Route("/")]
-    public async Task<List<ProductModel>> GetProducts(int? limit=0)
-    {
-        string sql = $"SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id LIMIT {limit},10";
+    public async Task<List<ProductModel>> GetProducts([FromQuery] int page=0)
+    {   
+        page = page < 0 ? 0 : page*9;
+        string sql = $"SELECT products.id, title, description, price, discount, rating, stock, imageurl, categories.name as category, brands.name as brand, image1, image2, image3, image4, image5 FROM products JOIN categories ON products.category_id = categories.id  JOIN brands ON products.brand_id = brands.id JOIN images ON products.id = images.id LIMIT {page},9";
 
         var products = await _data.LoadData<ProductModel, dynamic>(sql, new {}, _config.GetConnectionString("Default"));
         return products;
@@ -105,7 +106,14 @@ public class ApiController : Controller
         {
             max_price = query.max_price;
         }
-        sql += $" AND price between {min_price} AND {max_price}";
+        
+        int page = 0;
+        if(query.limit > 0)
+        {
+            page = query.limit*9;
+        }
+
+        sql += $" AND price between {min_price} AND {max_price} LIMIT {page},9";
 
         var products = await _data.LoadData<ProductModel, dynamic>(sql, new {}, _config.GetConnectionString("Default"));
         return products;
