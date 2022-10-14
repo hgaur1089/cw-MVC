@@ -1,9 +1,7 @@
 import React from 'react';
 
-import './productListItem.css';
-
 const ProductListItem = (props) => {
-    const {name, description, price, discount, rating, quantity, image, brand, category} = props;
+    const {title: name, description, price, discount, rating,stock: quantity, imageurl: image} = props.product;
     return (
         <div className="card">
             <div className="image-block">

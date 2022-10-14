@@ -1,86 +1,83 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { connect } from "react-redux";
 
 import "./productListItem.css";
+
 import ProductListItem from "./ProductListItem";
 import { fetchProducts, fetchFilteredProducts } from "../actions";
 
-class ProductList extends React.Component {
-  constructor() {
-    super();
+function ProductList(props) {
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, []);
+
+  const { products, filters, dispatch } = props;
+  const { loading, list, pageno: productPageNo } = products;
+  const { filterRange, filterCategories, filterBrands, filteredProducts, pageno: filtersPageNo } = filters;
+
+  const pageno = filteredProducts.length !== 0 ? filtersPageNo : productPageNo;
+  var data = list;
+  if(filteredProducts.length !== 0) {
+    data = filteredProducts;
+  } else if(filterRange.length !== 0 || filterCategories.length !== 0 || filterBrands.length !== 0) {
+    data = [];
+  } else {
+    data = list;
   }
-  componentDidMount() {
-    const store = this.props.store;
-    store.subscribe(() => {
-      this.forceUpdate();
-    });
-    store.dispatch(fetchProducts());
-  }
 
-  render() {
-    const { products } = this.props.store.getState();
-    const { dispatch } = this.props.store;
-    const { loading, pageno, filteredProducts, list } = products;
-    console.log("products = ", pageno, list);
+  const renderProducts = () => {
+    if (loading) {
+      return <div>Loading...</div>;
+    }
+    if (data.length === 0) {
+      return <div>No products found</div>;
+    }
+    return data.map((product) => (
+      <ProductListItem key={product.id} product={product} />
+    ));
+  };
 
-    const data = filteredProducts.length !== 0 ? filteredProducts : list;
+  const handlePageChange = (pageno) => {
+    if (filteredProducts.length !== 0) {
+      dispatch(fetchFilteredProducts(pageno));
+    } else {
+      dispatch(fetchProducts(pageno));
+    }
+  };
 
-    return ( 
-      <div style={styles.container}>
-        <div style={styles.heading}>
-          <h1>Product List</h1>
-        </div>
-        <div style={styles.productList}>
-          {data.map((product, index) => (
-            <ProductListItem
-              name={product.title}
-              description={product.description}
-              price={product.price}
-              discount={product.discount}
-              rating={product.rating}
-              quantity={product.stock}
-              image={product.imageurl}
-              brand={product.brand}
-              category={product.category}
-              key={`product-${index}`}
-            />
-          ))}
-        </div>
-
-        {loading && <div><h1>Loading...</h1></div>}
-        
-        <div style={styles.pagination}>
-          <button
-            style={styles.button}
-            onClick={() => {
-              if(pageno > 0) {
-                if(filteredProducts.length !== 0) {
-                  dispatch(fetchFilteredProducts(pageno - 1));
-                } else {
-                  dispatch(fetchProducts(pageno - 1));
-                }
-              }
-            }}
-          >
-            Previous
-          </button>
-          <button
-            style={styles.button}
-            onClick={() => {
-              if(filteredProducts.length !== 0) {
-                console.log("pageno = ", pageno);
-                dispatch(fetchFilteredProducts(pageno + 1));
-              } else {
-                dispatch(fetchProducts(pageno + 1));
-              }
-            }}
-          >
-            Next
-          </button>
-        </div>
+  return (
+    <div style={styles.container}>
+      <div style={styles.heading}>
+        <h1>Product List</h1>
       </div>
-    );
-  }
+      <div style={styles.productList}>{renderProducts()}</div>
+
+      <div style={styles.pagination}>
+        <button
+          style={styles.button}
+          onClick={() => handlePageChange(pageno - 1)}
+        >
+          Previous
+        </button>
+        <button
+          style={styles.button}
+          onClick={() => handlePageChange(pageno + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
 }
+
+function mapStateToProps(state) {
+  return {
+    products: state.products,
+    filters: state.filters,
+  };
+}
+
+export default connect(mapStateToProps)(ProductList);
 
 const styles = {
   heading: {
@@ -123,5 +120,3 @@ const styles = {
     cursor: "pointer",
   },
 };
-
-export default ProductList;

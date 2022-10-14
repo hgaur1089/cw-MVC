@@ -4,9 +4,9 @@ import thunk from 'redux-thunk';
 import rootReducer from '../reducers';
 
 const logger = ({dispatch, getState}) => (next) => (action) => {
-  console.log('ACTION_TYPE = ', action.type);
+  // console.log('ACTION_TYPE = ', action.type);
   if(typeof action !== 'function') {
-    console.log('ACTION = ', action);
+    // console.log('ACTION = ', action);
   }
   next(action);
 };

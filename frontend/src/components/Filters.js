@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { connect } from "react-redux";
 
 import {
   fetchBrands,
@@ -12,121 +13,109 @@ import {
 import ListButtons from "./ListButtons";
 
 const range = [
-  { id: 1, name: "<500", min_price: 0, max_price: 500 },
-  { id: 2, name: "500-1000", min_price: 500, max_price: 1000 },
-  { id: 3, name: "1000-2000", min_price: 1000, max_price: 2000 },
-  { id: 4, name: "2000-5000", min_price: 2000, max_price: 5000 },
-  { id: 5, name: "5000-10000", min_price: 5000, max_price: 10000 },
-  { id: 6, name: ">20000", min_price: 10000, max_price: 20000 },
+  { id: 1, name: "<100", min_price: 0, max_price: 100 },
+  { id: 2, name: "100-300", min_price: 100, max_price: 300 },
+  { id: 3, name: "300-600", min_price: 300, max_price: 600 },
+  { id: 4, name: "600-1000", min_price: 600, max_price: 1000 },
+  { id: 5, name: "1000-1500", min_price: 1000, max_price: 1500 },
+  { id: 6, name: ">1500", min_price: 1500, max_price: 20000 },
 ];
 
-class Filters extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      brands: [],
-      categories: [],
-    };
-  }
-  componentDidMount() {
-    const store = this.props.store;
-    store.subscribe(() => {
-      this.forceUpdate();
-    });
-    store.dispatch(fetchCategories());
-  }
+function Filters(props) {
 
-  handleClickRange = (id) => {
-    const store = this.props.store;
+  const { products, filters, dispatch } = props;
+  const { categories, brands } = products;
+  const { filteredProducts } = filters;
+
+  const handleClickRange = (id) => {
     const minPrice = range[id - 1].min_price;
     const maxPrice = range[id - 1].max_price;
-    store.dispatch(setFilterRange({ minPrice, maxPrice }));
-    store.dispatch(fetchFilteredProducts());
+    dispatch(setFilterRange({ minPrice, maxPrice }));
+    dispatch(fetchFilteredProducts());
   };
 
-  handleClickCategory = (category) => {
-    const { store } = this.props;
-    store.dispatch(setFilterCategory(category));
+  const handleClickCategory = (category) => {
+    dispatch(setFilterCategory(category));
 
-    const { filterCategories } = store.getState().products;
-    store.dispatch(fetchBrands(filterCategories));
-    store.dispatch(fetchFilteredProducts());
+    const { filterCategories } = filters;
+    dispatch(fetchBrands(filterCategories));
+    dispatch(fetchFilteredProducts());
   };
 
-  handleClickBrand = (brand) => {
-    const { store } = this.props;
-    store.dispatch(setFilterBrand(brand));
-    store.dispatch(fetchFilteredProducts());
+  const handleClickBrand = (brand) => {
+    dispatch(setFilterBrand(brand));
+    dispatch(fetchFilteredProducts());
   };
 
-  render() {
-    const { brands, categories, filteredProducts } =
-      this.props.store.getState().products;
+  const handleClearFilters = () => {
+    dispatch(clearFilters());
+  };
 
+  const renderFilterOptions = (data, type) => {
+    if (data.length === 0) {
+      return;
+    }
     return (
-      <div style={styles.container}>
-        <div style={styles.heading}>
-          <h1>Filters</h1>
-        </div>
-        <div style={styles.filterList}>
-          <div style={styles.filter}>
-            <h3>Range</h3>
-            <div style={styles.listContainer}>
-              {range.map((item) => (
-                <ListButtons
-                  key={item.id}
-                  list={item}
-                  handleClick={this.handleClickRange}
-                  type="radio"
-                  name="range"
-                />
-              ))}
-            </div>
+      <div style={styles.filterList}>
+        <div style={styles.filter}>
+          <h3>{type}</h3>
+          <div style={styles.listContainer}>
+            {data.map((item) => (
+              <ListButtons
+                key={item.id}
+                list={item}
+                handleClick={
+                  type === "Range"
+                    ? handleClickRange
+                    : type === "Categories"
+                    ? handleClickCategory
+                    : handleClickBrand
+                }
+              />
+            ))}
           </div>
-        </div>
-        <div style={styles.filterList}>
-          <div style={styles.filter}>
-            <h3>Categories</h3>
-            <div style={styles.listContainer}>
-              {categories.map((category) => (
-                <ListButtons
-                  key={category.id}
-                  list={category}
-                  handleClick={this.handleClickCategory}
-                />
-              ))}
-            </div>
-          </div>
-
-          {brands.length > 0 && (
-            <div style={styles.filter}>
-              <h3>Brands</h3>
-              <div style={styles.listContainer}>
-                {brands.map((brand) => (
-                  <ListButtons
-                    key={brand.id}
-                    list={brand}
-                    handleClick={this.handleClickBrand}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          {filteredProducts.length > 0 && (
-            <button
-              style={styles.clearButton}
-              onClick={() => {
-                this.props.store.dispatch(clearFilters());
-              }}
-            >
-              Clear Filters
-            </button>
-          )}
         </div>
       </div>
     );
-  }
+  };
+
+  const renderClearFilters = () => {
+    if (
+      filteredProducts.length !== 0 ||
+      filters.filterCategories.length !== 0 ||
+      filters.filterBrands.length !== 0
+    ) {
+      return (
+        <button style={styles.clearButton} onClick={handleClearFilters}>
+          Clear Filters
+        </button>
+      );
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.heading}>
+        <h1>Filters</h1>
+      </div>
+      {renderFilterOptions(range, "Range")}
+      {renderFilterOptions(categories, "Categories")}
+      {renderFilterOptions(brands, "Brands")}
+      
+        {renderClearFilters()}
+    
+    </div>
+  );
 }
+
+function mapStateToProps(state) {
+  return {
+    products: state.products,
+    filters: state.filters,
+  };
+}
+
+export default connect(mapStateToProps)(Filters);
 
 const styles = {
   container: {
@@ -172,5 +161,3 @@ const styles = {
     cursor: "pointer",
   },
 };
-
-export default Filters;

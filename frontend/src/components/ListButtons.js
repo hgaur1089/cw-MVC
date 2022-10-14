@@ -1,43 +1,38 @@
 import React, {useState} from "react";
 
 export default function ListButtons(props) {
-  const [checked, setChecked] = useState(false);
-  const handleChange = (listItem) => {
-    setChecked(!checked);
+  const [active, setActive] = useState(false);
+
+  const handleClick = () => {
+    setActive(!active);
     props.handleClick(props.list.id);
   };
 
-  const { list } = props;
-  const type = props.type ? props.type : "checkbox";
-  const name = props.name ? props.name : "checkbox";
   return (
-        <div style={styles.listItem}>
-          <label htmlFor="checkbox">{list.name}</label>
-          <input style={styles.checkbox}
-            type={type}
-            name={name}
-            checked={checked}
-            onChange={handleChange}
-          />
-        </div>
+    <button
+      style={active ? styles.activeButton : styles.button}
+      onClick={handleClick}
+    >
+      {props.list.name}
+    </button>
   );
 }
 
 const styles = {
-  listItem: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "0.1em 0.4em",
-    height: "30px",
-    margin: "5px",
+  button: {
     backgroundColor: "white",
+    border: "1px solid #e0e0e0",
     borderRadius: "5px",
-    boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.2)",
+    padding: "5px 10px",
+    margin: "5px",
     cursor: "pointer",
   },
-  checkbox: {
-    marginLeft: "10px",
+  activeButton: {
+    backgroundColor: "#f0c14b",
+    border: "1px solid #e0e0e0",
+    borderRadius: "5px",
+    padding: "5px 10px",
+    margin: "5px",
     cursor: "pointer",
   },
 };

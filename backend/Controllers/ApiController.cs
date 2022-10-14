@@ -96,15 +96,15 @@ public class ApiController : Controller
         }
 
         var min_price = 0; 
-        if(query.min_price > 0)
+        if(query.minPrice > 0)
         {
-            min_price = query.min_price;
+            min_price = query.minPrice;
         }
 
         var max_price = 1000000;
-        if(query.max_price > 0)
+        if(query.maxPrice > 0)
         {
-            max_price = query.max_price;
+            max_price = query.maxPrice;
         }
         
         int page = 0;
